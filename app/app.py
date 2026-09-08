@@ -24,9 +24,10 @@ try:
         api_key=st.secrets["GEMINI_API_KEY"]
     )
     gemini_ready = True
-except Exception:
+except Exception as e:
     gemini_client = None
     gemini_ready = False
+    gemini_error = str(e)
 
 
 # -------------------------------------------------
@@ -152,48 +153,56 @@ def analyze_crop_image(
 ):
 
     if not gemini_ready:
-        return (
-            "Gemini API is not configured correctly."
-        )
+        return """
+### ⚠️ Gemini Configuration Error
+
+Gemini API is not configured correctly.
+
+Please check the GEMINI_API_KEY in Streamlit Secrets.
+"""
 
     try:
 
         image_bytes = uploaded_image.getvalue()
 
         prompt = f"""
-You are an agricultural crop-image analysis assistant.
+You are AgriMedic AIx, an agricultural crop-image analysis assistant.
 
-Analyze the uploaded crop/leaf image carefully.
+Analyze this crop image carefully and provide practical agricultural guidance.
 
-User information:
+USER INFORMATION
 
 Crop: {crop}
 Crop age: {crop_age} days
 Problem type: {problem_type}
 
-Reported symptoms:
+Symptoms:
 {symptoms if symptoms else "Not provided"}
 
-User question:
+Question:
 {question}
 
-Please provide:
+TASK
 
-### 🌾 Image Analysis
+1. Identify the crop if possible.
+2. Describe only the visible symptoms.
+3. Give the most likely possible causes.
+4. Consider disease, pest, nutrient deficiency, water stress and environmental causes.
+5. Give a confidence level.
+6. Explain what additional close-up photos or information are needed.
+7. Give safe, practical agricultural recommendations.
 
-1. What crop/plant appears to be shown?
-2. What visible symptoms do you observe?
-3. What possible disease, pest, nutrient deficiency,
-   water stress, or other issue could explain the symptoms?
-4. How confident are you?
-5. What additional information or photo would help confirm it?
-6. Give practical and cautious agricultural recommendations.
+IMPORTANT SAFETY RULES
 
-Important:
-- Do not claim a confirmed diagnosis from the image alone.
-- If the image is unclear, say that clearly.
-- Do not recommend dangerous or excessive pesticide/fertilizer use.
-- Prefer integrated pest management and locally appropriate advice.
+- Do not claim a confirmed diagnosis from an image alone.
+- If the image is unclear, explicitly say so.
+- Do not recommend excessive fertilizer or pesticide use.
+- Do not invent symptoms that are not visible.
+- Prefer integrated pest management.
+- Recommend locally approved agricultural treatment only after proper identification.
+- Keep the answer practical and easy for a farmer to understand.
+
+Use clear Markdown headings.
 """
 
         response = gemini_client.models.generate_content(
@@ -207,20 +216,23 @@ Important:
             ]
         )
 
-        return response.text
+        if response.text:
+            return response.text
+
+        return "Gemini returned an empty response."
 
     except Exception as e:
 
         return f"""
 ### ⚠️ Image Analysis Error
 
-Gemini could not analyze the image.
+Gemini could not analyze the uploaded image.
 
-Please check your internet connection and try again.
+Please try again with a clear JPG or PNG photo.
 
-Technical error:
-{str(e)}
+**Technical error:** `{str(e)}`
 """
+
 
 
 # -------------------------------------------------
@@ -994,26 +1006,20 @@ if st.button("🌱 Get Agricultural Advice"):
 
         if uploaded_image:
 
-            with st.spinner(
-                "🤖 Gemini is analyzing the crop image..."
-            ):
+           with st.spinner("🤖 Gemini is analyzing the crop image..."):
 
-                image_analysis = analyze_crop_image(
-                    uploaded_image,
-                    crop,
-                    crop_age,
-                    problem_type,
-                    symptoms,
-                    question
-                )
-
-            st.success(
-                "📷 AI Crop Image Analysis"
+            image_analysis = analyze_crop_image(
+                uploaded_image,
+                crop,
+                crop_age,
+                problem_type,
+                symptoms,
+                question
             )
 
-            st.markdown(
-                image_analysis
-            )
+           st.subheader("📷 AI Crop Image Analysis")
+           st.markdown(image_analysis)
+
 
 
         # =================================================
