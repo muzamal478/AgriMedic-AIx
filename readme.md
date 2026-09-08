@@ -1,4 +1,3 @@
-````
 # 🌱 AgriMedic AIx
 
 **AI-Powered Agricultural Assistant**
