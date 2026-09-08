@@ -1,7 +1,3 @@
-Bilkul 👍 Tumhe **README.md ka complete code** chahiye jo tum seedha file mein paste kar sako.
-
- ### `README.md` mein yeh complete code paste karo
-
 ````
 # 🌱 AgriMedic AIx
 
